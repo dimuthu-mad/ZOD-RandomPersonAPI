@@ -1,7 +1,5 @@
 import express from "express";
-import { title } from "node:process";
 import { date, email, z } from "zod";
-import { da } from "zod/locales";
 
 const app = express();
 app.use(express.json());
