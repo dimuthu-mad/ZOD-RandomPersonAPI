@@ -1,6 +1,6 @@
 import express from "express";
 import { title } from "node:process";
-import { email, z } from "zod";
+import { date, email, z } from "zod";
 import { da } from "zod/locales";
 
 const app = express();
@@ -45,12 +45,40 @@ app.get("/random-person", async (req, res) => {
   }
 });
 
+const personUserSchema = z.object({
+  results: z.array(
+    z.object({
+      name: z.object({
+        first: z.string(),
+      }),
+      registered: z.object({
+        date: z.string().datetime(),
+      }),
+    }),
+  ),
+});
+
+app.get("/random-login", async (req, res) => {
+  const responseUser = await fetch("https://randomuser.me/api/");
+  const dataUser = await responseUser.json();
+  console.log(dataUser);
+  const validatedUserPerson = personUserSchema.safeParse(dataUser);
+  if (validatedUserPerson.success) {
+    res.status(200).json({
+      Person_Details: `${validatedUserPerson.data.results[0].name.first} registered on ${validatedUserPerson.data.results[0].registered.date.split("T")[0]}`,
+    });
+  } else {
+    res.status(500).json({ error: "Failed to fetch random user" });
+  }
+});
+
+const userSchema = z.object({
+  name: z.string().max(12).min(3),
+  age: z.number().min(18).max(100).default(28),
+  email: z.email().lowercase(),
+});
+
 app.post("/users", (req, res) => {
-  const userSchema = z.object({
-    name: z.string().max(12).min(3),
-    age: z.number().min(18).max(100).default(28),
-    email: z.email().lowercase(),
-  });
   const userValidation = userSchema.safeParse(req.body);
   if (userValidation.success) {
     res.status(201).json({
